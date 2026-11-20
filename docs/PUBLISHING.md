@@ -102,7 +102,25 @@ node dev/market/serve.mjs 8899    # 改端口：node dev/market/serve.mjs 8901
 - 产物本身可安装、可运行（73 项断言）；
 - **没有**做的一件事：在「发现」里点「安装」——那一步会去 npm 取 `dsh-office-magic-box@1.2.0`，在发布之前必然 404。发布后这一击才会通。
 
-## 七、发版检查单
+## 七、发布后别人怎么装
+
+发布成功后**不用再做任何托管**，索引会自动通过 npm CDN 公开：
+
+```
+https://cdn.jsdelivr.net/npm/dsh-office-magic-box/market/index.json
+```
+
+把这个地址（或你自己托管的同一份 JSON）给用户，他们在「插件 → 发现 → 添加索引」里填入，就能看到卡片并安装 —— 安装来源是 npm，与你本地的 link 安装无关。
+
+自检三步：
+
+1. `curl -s https://cdn.jsdelivr.net/npm/dsh-office-magic-box/market/index.json | head`（jsDelivr 有新版本缓存，刚发布可能要等几十秒）
+2. 在另一台机器（或卸载本地 link 后）加索引 → 安装 → 打开面板
+3. 确认「关于」里的版本、作者是市场那份，而不是本地工作区
+
+想让更多人发现，可以再把同一个索引提交给公共目录（dsh-plugin-catalog、awesome-dsh-plugin、dshmarket、dsh-purge index——各自走仓库 PR；本机访问这些域名不通，收录规则未核对）。
+
+## 八、发版检查单
 
 - [x] 公开包名、去掉 `private`、作者/许可证/engines
 - [x] `npm pack` 产物不含 `dev/`、`node_modules/`、测试
