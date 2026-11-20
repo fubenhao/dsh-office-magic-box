@@ -1,0 +1,7 @@
+# 统一换行：仓库内保持 LF，避免跨平台差异
+* text=auto eol=lf
+
+# 二进制/产物
+*.png binary
+*.tgz binary
+*.pdf binary

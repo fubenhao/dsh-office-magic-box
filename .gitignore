@@ -1,0 +1,7 @@
+# 依赖与打包产物
+node_modules/
+*.tgz
+package-lock.json
+
+# 本地测试产物（dev/ 下的脚本可重新生成）
+dev/preview-page-*.png

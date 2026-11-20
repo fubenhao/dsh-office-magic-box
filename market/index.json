@@ -1,0 +1,62 @@
+{
+  "format": 1,
+  "title": {
+    "zh": "FBH 的 DSH 插件",
+    "en": "FBH's DSH plugins"
+  },
+  "description": {
+    "zh": "办公小工具：启动中控台、发票合并。",
+    "en": "Small office tools: launch console and invoice merge."
+  },
+  "metadata": {
+    "categories": {
+      "office": {
+        "title": {
+          "zh": "办公",
+          "en": "Office"
+        }
+      }
+    },
+    "labels": {},
+    "sortKeys": {}
+  },
+  "plugins": [
+    {
+      "name": "dsh-office-magic-box",
+      "title": {
+        "zh": "办公魔盒",
+        "en": "Office magic box"
+      },
+      "description": {
+        "zh": "在左侧栏加一个「办公魔盒」面板，里面是办公小工具的入口。启动中控台：把本机上的服务、系统或脚本按「名称 + 启动命令 + 工作目录」登记一次，之后点「启动」「重启」「停止」，并可直接查看进程输出；把几个服务编进场景后点「一键启动」，会按步骤顺序依次拉起，也能一键停掉这一组。发票合并：选好几张发票 PDF（可调顺序），生成的每一页会实时预览，点「打印」直接调起系统打印对话框选打印机（双面、长边翻页），也可以「生成打印文件」导出一份每张 A4 两面各两张的 PDF 自己打印；排版可选自动 / 左右 / 上下，纸张可选 A4 纵向或横向，可加中缝裁切线。入口是左侧栏底部的「办公魔盒」图标，主页显示当前版本号，右上角「设置」可以改启动中控台的配置文件位置、发票的默认打开文件夹与默认保存文件夹。两个工具都在本机运行：发票文件不会离开这台电脑，服务登记保存在 DSH 主目录下的状态文件里。命令以你自己的身份执行，等同于在终端里手动敲一遍；退出 DSH 后，面板启动的进程不会被它继续管理。",
+        "en": "Adds an Office magic box panel at the foot of the left sidebar with entries for small office tools. Launch console: register each local service, system, or script once with a name, command line, and working directory, then start, restart, stop, and read its output; group several into a scene and Start scene runs them in order, while Stop this group stops what that scene started. Invoice merge: pick several invoice PDFs (reorder as needed) and every generated page is previewed live; Print opens the system print dialog to pick a printer (duplex, flip on long edge), and Generate print file exports one PDF with two invoices per A4 side; layout can be auto, side by side, or stacked, paper can be A4 portrait or landscape, and a cut line can be drawn between the two. The home page shows the current version, and Settings changes the launch console state-file location plus the default invoice folder to open and the default save folder. Both tools run on this machine: invoice files never leave it, and service registrations live in a state file under the DSH home directory. Commands run with your own permissions, exactly as if typed in a terminal, and processes started from the panel stop being managed once DSH exits."
+      },
+      "icon": "icon.svg",
+      "author": "FBH · Forever Be Home",
+      "homepage": "https://www.npmjs.com/package/dsh-office-magic-box",
+      "metadata": {
+        "category": "office",
+        "keywords": [
+          "invoice",
+          "pdf",
+          "launcher",
+          "office"
+        ],
+        "labels": [],
+        "sortKeys": {}
+      },
+      "versions": [
+        {
+          "version": "1.2.0",
+          "publishTimestamp": 1795184805,
+          "source": {
+            "type": "npm"
+          },
+          "engines": {
+            "dsh": ">=0.2.1-rc.2 || >=0.2.2-rc.1"
+          }
+        }
+      ]
+    }
+  ]
+}

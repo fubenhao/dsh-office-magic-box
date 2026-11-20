@@ -1,0 +1,68 @@
+{
+  "name": "dsh-office-magic-box",
+  "version": "1.2.0",
+  "description": "A small toolbox for office chores: a launch console for local services and systems, and a two-up invoice merger with live preview and duplex printing.",
+  "type": "module",
+  "author": {
+    "name": "FBH · Forever Be Home"
+  },
+  "license": "MIT",
+  "keywords": [
+    "deepseek-harness",
+    "dsh",
+    "dsh-plugin",
+    "cordis",
+    "office",
+    "invoice",
+    "pdf",
+    "launcher",
+    "launchpad"
+  ],
+  "engines": {
+    "node": "^22.19.0 || >=24.0.0",
+    "dsh": ">=0.2.1-rc.2 || >=0.2.2-rc.1"
+  },
+  "exports": {
+    ".": "./index.js",
+    "./client": "./client.js",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg"
+  },
+  "files": [
+    "index.js",
+    "lib",
+    "client.js",
+    "cordis.patch.yml",
+    "locale/*.json",
+    "docs",
+    "icon.svg",
+    "README.md",
+    "market"
+  ],
+  "dependencies": {
+    "pdf-lib": "^1.17.1"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "inject": [
+        "@deepseek-ai/dsh-client-locale",
+        "@deepseek-ai/dsh-client-ui-slots"
+      ]
+    }
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "homepage": "https://github.com/fubenhao/dsh-office-magic-box",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/fubenhao/dsh-office-magic-box.git"
+  },
+  "bugs": {
+    "url": "https://github.com/fubenhao/dsh-office-magic-box/issues"
+  }
+}
