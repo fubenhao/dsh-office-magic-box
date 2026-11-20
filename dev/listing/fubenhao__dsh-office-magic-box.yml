@@ -1,0 +1,11 @@
+# awesome-dsh-plugin 投稿条目
+# 目标路径：data/plugins/fubenhao__dsh-office-magic-box.yml（整份提交只需要这一个文件）
+# 仓库公开后，可取消最后一行 icon 的注释（该列表只接受 GitHub 托管的位图，SVG 会被拒）
+
+url: https://github.com/fubenhao/dsh-office-magic-box
+name: fubenhao/dsh-office-magic-box
+category: tools
+description:
+  en: Adds a panel that starts registered local services in scene order and merges invoice PDFs two to an A4 side for duplex printing.
+  zh: 加一个面板：启动已登记的本机服务、按场景顺序批量启动，并把多张发票 PDF 合成每张 A4 两面各两张，便于双面打印。
+# icon: https://raw.githubusercontent.com/fubenhao/dsh-office-magic-box/main/assets/icon-180.png

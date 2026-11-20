@@ -120,7 +120,40 @@ https://cdn.jsdelivr.net/npm/dsh-office-magic-box/market/index.json
 
 想让更多人发现，可以再把同一个索引提交给公共目录（dsh-plugin-catalog、awesome-dsh-plugin、dshmarket、dsh-purge index——各自走仓库 PR；本机访问这些域名不通，收录规则未核对）。
 
-## 八、发版检查单
+## 九、收录到 awesome-dsh-plugin（社区列表）
+
+它是一家**独立维护的社区列表**（你 profile 里 `awesome-dsh-plugin.com/index.json` 那个源），收录方式和 npm/市场索引不同：**一个插件 = 仓库里一个 YAML 文件**，提 PR 即可，索引由他们构建。
+
+### 逐条对照（截至当前仓库状态）
+
+| 他们的要求 | 我们的状态 |
+|:--|:--|
+| 仓库 `package.json` 声明 `dsh.bundle` | ✅ `{"patch":"./cordis.patch.yml"}`，patch 文件在仓库根 |
+| 不能被拒于「只有 `dsh.client`」 | ✅ 两者都有，且有真实代码 |
+| 官方 `@deepseek-ai/*` 用 peerDependencies | ✅ 我们没有官方依赖（pdf-lib 是普通 dependency） |
+| 仓库 **公开可读** | ❌ **当前是私有仓库**——CI 会从 GitHub 拉 `package.json`，拉不到即失败；图标/截图也走 `raw.githubusercontent.com` |
+| 仓库创建满 **1 天** | ⏳ 今天才创建，明天这个时间之后自然达标（他们明说可重投，不记差评） |
+| 加 `dsh-plugin` topic | ❌ 待加（仓库设置页，转公开后一起加） |
+| 描述只说功能、无营销词、以句号结尾 | ✅ 见下 |
+| 一个 PR 最多 3 条、不手改 README | ✅ 只加 1 条 |
+
+### 准备好的投稿文件
+
+- 条目：`dev/listing/fubenhao__dsh-office-magic-box.yml` → 复制到对方仓库的 `data/plugins/fubenhao__dsh-office-magic-box.yml`
+- 商店图标：`assets/icon-180.png`（180×180 PNG，由 `icon.svg` 渲染；该列表拒收 SVG）
+- 截图：`assets/preview-1.png`、`assets/preview-2.png` + 仓库根的 `screenshots.json`（1–8 张，相对路径）
+
+### 提 PR 的步骤（仓库转公开并满 1 天后）
+
+1. 打开 <https://github.com/awesome-dsh-plugin/awesome-dsh-plugin/fork>
+2. 在自己的 fork 里新建分支，添加 `data/plugins/fubenhao__dsh-office-magic-box.yml`（内容用上面那份）
+3. 提交并向上游开 PR，标题写插件名即可
+4. 等 CI：entry 数 → `dsh.bundle` → 仓库年龄 → awesome-lint
+5. 被 `held: author` 打回时，改同一分支再留**一条**评论即可
+
+> 注意：他们的 CI 从 **GitHub 仓库**读 manifest，所以 npm 发布**不是**收录条件；但 npm 页面若要与该条目录关联，`package.json` 的 `repository` 必须指回同一仓库（我们已经指回）。
+
+## 十、发版检查单
 
 - [x] 公开包名、去掉 `private`、作者/许可证/engines
 - [x] `npm pack` 产物不含 `dev/`、`node_modules/`、测试
