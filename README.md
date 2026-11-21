@@ -14,7 +14,10 @@
 
 **方式一：插件市场（推荐）**
 
-1. DSH → 插件 → 发现 → 添加索引：`https://cdn.jsdelivr.net/npm/dsh-office-magic-box/market/index.json`
+1. DSH → 插件 → 发现 → 添加索引（任选一条能打开的，内容同源，安装都走 npm）：
+   - `https://unpkg.com/dsh-office-magic-box/market/index.json`（国内网络实测可用）
+   - `https://cdn.jsdelivr.net/npm/dsh-office-magic-box/market/index.json`
+   - `https://raw.githubusercontent.com/fubenhao/dsh-office-magic-box/main/market/index.json`
 2. 找到「办公魔盒」→ 安装
 3. 重启 DSH（Host 半）或刷新页面（只改了界面时）
 

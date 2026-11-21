@@ -146,11 +146,15 @@ node dev/market/serve.mjs 8899    # 改端口：node dev/market/serve.mjs 8901
 
 ## 七、发布后别人怎么装
 
-发布成功后**不用再做任何托管**，索引会自动通过 npm CDN 公开：
+发布成功后**不用再做任何托管**，索引随包发布，任意 npm 文件 CDN 都能取到（内容同源，安装走 npm）：
 
 ```
-https://cdn.jsdelivr.net/npm/dsh-office-magic-box/market/index.json
+https://unpkg.com/dsh-office-magic-box/market/index.json                                   # 国内实测可达
+https://cdn.jsdelivr.net/npm/dsh-office-magic-box/market/index.json                        # 海外常用
+https://raw.githubusercontent.com/fubenhao/dsh-office-magic-box/main/market/index.json     # 仓库直读
 ```
+
+注意：个人网络可能挡住其中某一条（例如 jsDelivr 在部分大陆网络下 `ECONNRESET`），这时换另外一条即可——它们提供的是同一个文件，安装来源都是 npm。
 
 把这个地址（或你自己托管的同一份 JSON）给用户，他们在「插件 → 发现 → 添加索引」里填入，就能看到卡片并安装 —— 安装来源是 npm，与你本地的 link 安装无关。
 
