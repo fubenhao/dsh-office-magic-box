@@ -155,6 +155,9 @@ window.__ModuleLoader__.load({
       settingsSubtitle: '路径都在本机；改完点「保存」立即生效。',
       sectionLauncher: '启动中控台',
       sectionInvoices: '发票合并',
+      sectionBookmarks: '书签夹',
+      bookmarkFileLabel: '清单文件（bookmarks.json）',
+      bookmarkFileHint: '默认：{path}。这个文件里不含密码，密码存在宿主凭据库。',
       stateFileLabel: '配置文件（state.json）',
       stateFileHint: '默认：{path}。换文件后当前运行的服务会先被停止。',
       openDirLabel: '默认打开文件夹',
@@ -349,6 +352,9 @@ window.__ModuleLoader__.load({
       settingsSubtitle: 'Paths stay on this machine; changes apply as soon as you save.',
       sectionLauncher: 'Launch console',
       sectionInvoices: 'Invoice merge',
+      sectionBookmarks: 'Bookmarks',
+      bookmarkFileLabel: 'List file (bookmarks.json)',
+      bookmarkFileHint: 'Default: {path}. The file holds no passwords; those live in the host credential store.',
       stateFileLabel: 'State file (state.json)',
       stateFileHint: 'Default: {path}. Switching the file stops the services that are running.',
       openDirLabel: 'Default folder to open',
@@ -1003,6 +1009,18 @@ window.__ModuleLoader__.load({
     }
 
     /**
+     * 把目录拼成 bookmarks.json 的完整路径。
+     * @param {string} dir 目录。
+     * @returns {string} 文件路径。
+     */
+    function bookmarkFileIn(dir) {
+      const trimmed = String(dir || '').replace(/[\\/]+$/, '')
+      if (!trimmed) return ''
+      const separator = trimmed.includes('\\') ? '\\' : '/'
+      return `${trimmed}${separator}bookmarks.json`
+    }
+
+    /**
      * 设置页。
      * @param {object} props 属性。
      * @returns {object} React 元素。
@@ -1013,6 +1031,7 @@ window.__ModuleLoader__.load({
       const [stateFile, setStateFile] = useState('')
       const [openDir, setOpenDir] = useState('')
       const [downloadDir, setDownloadDir] = useState('')
+      const [bookmarkFile, setBookmarkFile] = useState('')
       const [busy, setBusy] = useState(false)
       const [picking, setPicking] = useState('')
       const [error, setError] = useState('')
@@ -1023,6 +1042,7 @@ window.__ModuleLoader__.load({
         setStateFile(settings.stateFile || '')
         setOpenDir(settings.openDir || '')
         setDownloadDir(settings.downloadDir || '')
+        setBookmarkFile(settings.bookmarkFile || '')
       }, [config])
 
       useEffect(() => {
@@ -1048,6 +1068,7 @@ window.__ModuleLoader__.load({
 
       const save = () => submit({
         launcher: { stateFile },
+        bookmarks: { file: bookmarkFile },
         invoices: { openDir, downloadDir },
       })
 
@@ -1055,7 +1076,8 @@ window.__ModuleLoader__.load({
         setStateFile('')
         setOpenDir('')
         setDownloadDir('')
-        await submit({ launcher: { stateFile: '' }, invoices: { openDir: '', downloadDir: '' } })
+        setBookmarkFile('')
+        await submit({ launcher: { stateFile: '' }, bookmarks: { file: '' }, invoices: { openDir: '', downloadDir: '' } })
         setNotice(t('resetDone'))
       }
 
@@ -1071,7 +1093,7 @@ window.__ModuleLoader__.load({
         }
       }
 
-      const defaults = settings ? settings.defaults : { stateFile: '', openDir: '', downloadDir: '' }
+      const defaults = settings ? settings.defaults : { stateFile: '', bookmarkFile: '', openDir: '', downloadDir: '' }
 
       return h('div', null,
         h(Crumb, { t, onBack: props.onBack, current: t('settingsTitle') }),
@@ -1119,6 +1141,28 @@ window.__ModuleLoader__.load({
                 label: t('pickDir'),
                 disabled: Boolean(picking),
                 onClick: () => pickDir('stateFile', dir => setStateFile(stateFileIn(dir))),
+              }),
+            ),
+          ),
+          h('section', { className: 'omb-section-block' },
+            h('h2', { className: 'omb-section-title' }, t('sectionBookmarks')),
+            h('div', { className: 'omb-path-row' },
+              h(Field, {
+                label: t('bookmarkFileLabel'),
+                hint: fill(t('bookmarkFileHint'), { path: defaults.bookmarkFile }),
+              },
+              h('input', {
+                className: 'omb-input',
+                value: bookmarkFile,
+                spellCheck: false,
+                placeholder: defaults.bookmarkFile,
+                onChange: event => setBookmarkFile(event.target.value),
+              }),
+              ),
+              h(Btn, {
+                label: t('pickDir'),
+                disabled: Boolean(picking),
+                onClick: () => pickDir('bookmarkFile', dir => setBookmarkFile(bookmarkFileIn(dir))),
               }),
             ),
           ),

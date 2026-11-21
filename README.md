@@ -1,5 +1,7 @@
 # 办公魔盒
 
+> 结构、接口、数据与测试见 [docs/PROJECT.md](docs/PROJECT.md) · 版本变化见 [docs/CHANGELOG.md](docs/CHANGELOG.md)
+
 > 作者：**FBH · Forever Be Home**——「此心安处是吾乡」 · 版本见主页徽标（当前 1.2.0）· 许可证 MIT
 > 仓库：<https://github.com/fubenhao/dsh-office-magic-box>
 
@@ -84,11 +86,12 @@
 
 ## 设置
 
-主页右上角「设置」，三个路径都在本机、改完点「保存」立即生效：
+主页右上角「设置」，四个路径都在本机、改完点「保存」立即生效：
 
 | 设置项 | 作用 | 默认值 |
 |:--|:--|:--|
 | 启动中控台的配置文件 | 服务与场景存到哪个 `state.json`；**换文件前会先停掉当前运行的服务** | `$DSH_HOME/office-magic-box/state.json` |
+| 书签夹的清单文件 | 书签存在哪个 `bookmarks.json`（**不含密码**，密码在凭据库） | `$DSH_HOME/office-magic-box/bookmarks.json` |
 | 发票默认打开文件夹 | 「从文件夹添加」从这里读 PDF | 系统「文档」文件夹 |
 | 发票默认保存文件夹 | 「保存到文件夹」把生成的 PDF 放这里 | 系统「下载」文件夹 |
 

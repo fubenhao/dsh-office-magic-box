@@ -80,6 +80,14 @@ function defaultStateFilePath() {
 }
 
 /**
+ * 默认书签清单文件。
+ * @returns {string} 绝对路径。
+ */
+function defaultBookmarksFile() {
+  return path.join(dataDir(), 'bookmarks.json')
+}
+
+/**
  * 默认的发票文件夹：优先系统「文档」，没有就用用户目录。
  * @returns {string} 绝对路径。
  */
@@ -259,6 +267,7 @@ export function apply(ctx) {
     return {
       version: SETTINGS_VERSION,
       launcher: { stateFile: '' },
+      bookmarks: { file: '' },
       invoices: { openDir: '', downloadDir: '' },
     }
   }
@@ -273,7 +282,9 @@ export function apply(ctx) {
     const source = raw && typeof raw === 'object' ? raw : {}
     const launcher = source.launcher && typeof source.launcher === 'object' ? source.launcher : {}
     const invoices = source.invoices && typeof source.invoices === 'object' ? source.invoices : {}
+    const bookmarks = source.bookmarks && typeof source.bookmarks === 'object' ? source.bookmarks : {}
     next.launcher.stateFile = text(launcher.stateFile).trim()
+    next.bookmarks.file = text(bookmarks.file).trim()
     next.invoices.openDir = text(invoices.openDir).trim()
     next.invoices.downloadDir = text(invoices.downloadDir).trim()
     return next
@@ -320,15 +331,18 @@ export function apply(ctx) {
   function resolvedSettings(settings) {
     return {
       stateFile: settings.launcher.stateFile || defaultStateFilePath(),
+      bookmarkFile: settings.bookmarks.file || defaultBookmarksFile(),
       openDir: settings.invoices.openDir || defaultInvoiceOpenDir(),
       downloadDir: settings.invoices.downloadDir || defaultInvoiceDownloadDir(),
       defaults: {
         stateFile: defaultStateFilePath(),
+        bookmarkFile: defaultBookmarksFile(),
         openDir: defaultInvoiceOpenDir(),
         downloadDir: defaultInvoiceDownloadDir(),
       },
       custom: {
         stateFile: Boolean(settings.launcher.stateFile),
+        bookmarkFile: Boolean(settings.bookmarks.file),
         openDir: Boolean(settings.invoices.openDir),
         downloadDir: Boolean(settings.invoices.downloadDir),
       },
@@ -353,6 +367,7 @@ export function apply(ctx) {
     const current = await loadSettings()
     const merged = normalizeSettings({
       launcher: Object.assign({}, current.launcher, patch && patch.launcher),
+      bookmarks: Object.assign({}, current.bookmarks, patch && patch.bookmarks),
       invoices: Object.assign({}, current.invoices, patch && patch.invoices),
     })
 
@@ -365,6 +380,17 @@ export function apply(ctx) {
       const existing = await fsp.stat(absolute).catch(() => null)
       if (existing && existing.isDirectory()) throw new Error('配置文件路径指向了一个文件夹')
       merged.launcher.stateFile = absolute
+    }
+
+    const nextBookmarksFile = merged.bookmarks.file
+    if (nextBookmarksFile) {
+      const absolute = path.resolve(nextBookmarksFile)
+      if (!path.isAbsolute(nextBookmarksFile)) throw new Error('书签清单路径必须是绝对路径')
+      if (!/\.json$/i.test(absolute)) throw new Error('书签清单路径必须以 .json 结尾')
+      await fsp.mkdir(path.dirname(absolute), { recursive: true })
+      const existing = await fsp.stat(absolute).catch(() => null)
+      if (existing && existing.isDirectory()) throw new Error('书签清单路径指向了一个文件夹')
+      merged.bookmarks.file = absolute
     }
 
     if (merged.invoices.openDir) {
@@ -402,6 +428,10 @@ export function apply(ctx) {
       runtime.clear()
       sceneRun = null
       cache = null
+    }
+    // 换了书签清单文件：缓存作废，下次请求重新读（密码仍按书签 id 存在凭据库里）。
+    if (merged.bookmarks.file !== current.bookmarks.file) {
+      bookmarkCache = null
     }
     return resolvedSettings(merged)
   }
@@ -995,8 +1025,9 @@ export function apply(ctx) {
    * 书签文件路径（密码不在这里，见 credentialKey）。
    * @returns {string} 绝对路径。
    */
-  function bookmarksFile() {
-    return path.join(dataDir(), 'bookmarks.json')
+  async function bookmarksFile() {
+    const settings = await loadSettings()
+    return settings.bookmarks.file || defaultBookmarksFile()
   }
 
   /**
@@ -1037,7 +1068,7 @@ export function apply(ctx) {
     bookmarkLoading = (async () => {
       let raw = null
       try {
-        raw = JSON.parse(await fsp.readFile(bookmarksFile(), 'utf8'))
+        raw = JSON.parse(await fsp.readFile(await bookmarksFile(), 'utf8'))
       } catch {
         raw = null
       }
@@ -1056,7 +1087,7 @@ export function apply(ctx) {
    */
   function saveBookmarks(state) {
     bookmarkSaving = bookmarkSaving.then(async () => {
-      const file = bookmarksFile()
+      const file = await bookmarksFile()
       await fsp.mkdir(path.dirname(file), { recursive: true })
       const temp = `${file}.${process.pid}.tmp`
       await fsp.writeFile(temp, `${JSON.stringify(state, null, 2)}\n`, 'utf8')
@@ -1145,7 +1176,7 @@ export function apply(ctx) {
       items,
       browsers: browserCatalog(),
       credentials: Boolean(credentialStore()),
-      file: bookmarksFile(),
+      file: await bookmarksFile(),
     }
   }
 

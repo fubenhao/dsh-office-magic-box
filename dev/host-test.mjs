@@ -465,6 +465,7 @@ check('设置接口带上作者', settingsBody.author === 'FBH · Forever Be Hom
 check('插件目录存在', typeof settingsBody.plugin.dir === 'string' && fs.existsSync(settingsBody.plugin.dir), settingsBody.plugin.dir)
 check('插件名与版本齐全', /office-magic-box$/.test(settingsBody.plugin.name) && settingsBody.plugin.version === settingsBody.version, settingsBody.plugin)
 check('默认状态文件在 DSH 目录下', settingsBody.settings.custom.stateFile === false && settingsBody.settings.stateFile.endsWith('state.json'), settingsBody.settings.stateFile)
+check('默认书签清单已给出', typeof settingsBody.settings.bookmarkFile === 'string' && settingsBody.settings.bookmarkFile.endsWith('bookmarks.json'), settingsBody.settings.bookmarkFile)
 check('默认保存文件夹已给出', typeof settingsBody.settings.downloadDir === 'string' && settingsBody.settings.downloadDir.length > 2, settingsBody.settings.downloadDir)
 
 const badSettings = await settingsRoute.fetch(new Request('http://dsh.internal/api/office-magic-box/settings', {
@@ -498,6 +499,28 @@ const appliedBody = await applied.json()
 check('设置保存成功', applied.status === 200 && appliedBody.settings.stateFile === customState, appliedBody.settings && appliedBody.settings.stateFile)
 check('自定义保存文件夹被创建', fs.existsSync(saveDir))
 check('自定义状态目录被创建', fs.existsSync(path.dirname(customState)))
+
+const customBookmarks = path.join(sandbox, 'lists', 'my-bookmarks.json')
+const bookmarksSetting = await settingsRoute.fetch(new Request('http://dsh.internal/api/office-magic-box/settings', {
+  method: 'POST',
+  body: JSON.stringify({ bookmarks: { file: customBookmarks } }),
+}))
+const bookmarksSettingBody = await bookmarksSetting.json()
+check('书签清单路径可设置', bookmarksSetting.status === 200 && bookmarksSettingBody.settings.bookmarkFile === customBookmarks, bookmarksSettingBody.settings && bookmarksSettingBody.settings.bookmarkFile)
+
+const bmAtCustom = await bookmarksRoute.fetch(new Request('http://dsh.internal/api/office-magic-box/bookmarks', {
+  method: 'POST',
+  body: JSON.stringify({ action: 'save', name: 'OA2', url: 'https://oa2.example.com', browser: 'system' }),
+}))
+const bmAtCustomBody = await bmAtCustom.json()
+check('书签写进自定义清单文件', bmAtCustom.status === 200 && fs.existsSync(customBookmarks), customBookmarks)
+check('快照报告当前清单路径', bmAtCustomBody.state.file === customBookmarks, bmAtCustomBody.state && bmAtCustomBody.state.file)
+
+const badBookmarkFile = await settingsRoute.fetch(new Request('http://dsh.internal/api/office-magic-box/settings', {
+  method: 'POST',
+  body: JSON.stringify({ bookmarks: { file: path.join(sandbox, 'lists', 'x.txt') } }),
+}))
+check('书签清单必须是 .json', badBookmarkFile.status === 400 && /\.json/.test((await badBookmarkFile.json()).error))
 
 const switchedState = await readState()
 check('切换后状态文件指向新路径', switchedState.stateFile === customState, switchedState.stateFile)

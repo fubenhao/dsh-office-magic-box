@@ -134,12 +134,12 @@ const config = {
 }
 const settingsView = views.SettingsView({ t, config, onBack: noop, pickDirectory: async () => ({ ok: true, path: 'D:\\x' }), onSaved: noop })
 check('设置页有标题与版本', byClass(settingsView, 'omb-title')[0].children[0] === 'settingsTitle' && byClass(settingsView, 'omb-ver').length === 1)
-check('设置页三个分区（启动/发票/关于）', byClass(settingsView, 'omb-section-block').length === 3, byClass(settingsView, 'omb-section-block').length)
+check('设置页四个分区（启动/书签/发票/关于）', byClass(settingsView, 'omb-section-block').length === 4, byClass(settingsView, 'omb-section-block').length)
 const aboutRows = byClass(settingsView, 'omb-kv')[0]
 check('关于区展示作者等信息', Boolean(aboutRows) && aboutRows.children.filter(child => child && child.type === 'dt').length === 5, aboutRows && aboutRows.children.length)
 check('关于区作者取 config.author', JSON.stringify(aboutRows).includes('FBH · Forever Be Home'))
-check('关于区有署名词', JSON.stringify(byClass(settingsView, 'omb-section-block')[2]).includes('signature'), byClass(settingsView, 'omb-note').map(node => node.children[0]))
-check('设置页三个路径输入', byClass(settingsView, 'omb-input').length === 3, byClass(settingsView, 'omb-input').length)
+check('关于区有署名词', JSON.stringify(byClass(settingsView, 'omb-section-block')[3]).includes('signature'), byClass(settingsView, 'omb-note').map(node => node.children[0]))
+check('设置页四个路径输入', byClass(settingsView, 'omb-input').length === 4, byClass(settingsView, 'omb-input').length)
 check('设置页有保存与恢复默认', byClass(settingsView, 'omb-btn').some(button => button.children[0] === 'save') && byClass(settingsView, 'omb-btn').some(button => button.children[0] === 'useDefault'))
 
 const home = views.HomeView({ t, onOpen: noop })
