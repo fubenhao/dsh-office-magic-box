@@ -12,12 +12,14 @@
  */
 
 import { existsSync } from 'node:fs'
+import { spawn } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
 import os from 'node:os'
 import fsp from 'node:fs/promises'
 import { randomUUID } from 'node:crypto'
 import { mergeInvoices, downloadFileName } from './lib/invoices.js'
+import { BROWSER_IDS, browserCatalog, resolveLaunchPlan } from './lib/browsers.js'
 
 /** 插件行名。 */
 export const name = 'office-magic-box'
@@ -200,6 +202,13 @@ export function apply(ctx) {
   let sceneRun = null
   /** @type {Promise<void>} */
   let saving = Promise.resolve()
+
+  /** @type {object | null} 已读取的书签 */
+  let bookmarkCache = null
+  /** @type {Promise<object> | null} */
+  let bookmarkLoading = null
+  /** @type {Promise<void>} */
+  let bookmarkSaving = Promise.resolve()
 
   /** @type {object | null} 已读取的设置 */
   let settingsCache = null
@@ -983,6 +992,268 @@ export function apply(ctx) {
   }
 
   /**
+   * 书签文件路径（密码不在这里，见 credentialKey）。
+   * @returns {string} 绝对路径。
+   */
+  function bookmarksFile() {
+    return path.join(dataDir(), 'bookmarks.json')
+  }
+
+  /**
+   * 空书签表。
+   * @returns {{ version: number, items: object[] }} 书签表。
+   */
+  function emptyBookmarks() {
+    return { version: 1, items: [] }
+  }
+
+  /**
+   * 规整一条书签。
+   * @param {unknown} raw 原始记录。
+   * @param {number} index 序号。
+   * @returns {object} 书签。
+   */
+  function normalizeBookmark(raw, index) {
+    const source = raw && typeof raw === 'object' ? raw : {}
+    const browser = text(source.browser)
+    return {
+      id: text(source.id).trim() || randomUUID(),
+      name: text(source.name).trim() || `书签 ${index + 1}`,
+      url: text(source.url).trim(),
+      username: text(source.username).trim(),
+      browser: BROWSER_IDS.includes(browser) ? browser : 'system',
+      customPath: text(source.customPath).trim(),
+      createdAt: millis(source.createdAt, Date.now()),
+    }
+  }
+
+  /**
+   * 读取书签表（内存缓存）。
+   * @returns {Promise<{ version: number, items: object[] }>} 书签表。
+   */
+  async function loadBookmarks() {
+    if (bookmarkCache) return bookmarkCache
+    if (bookmarkLoading) return bookmarkLoading
+    bookmarkLoading = (async () => {
+      let raw = null
+      try {
+        raw = JSON.parse(await fsp.readFile(bookmarksFile(), 'utf8'))
+      } catch {
+        raw = null
+      }
+      const state = emptyBookmarks()
+      if (raw && Array.isArray(raw.items)) state.items = raw.items.map(normalizeBookmark)
+      bookmarkCache = state
+      return state
+    })().finally(() => { bookmarkLoading = null })
+    return bookmarkLoading
+  }
+
+  /**
+   * 写书签表（原子写、串行化）。
+   * @param {object} state 书签表。
+   * @returns {Promise<void>} 写完 resolve。
+   */
+  function saveBookmarks(state) {
+    bookmarkSaving = bookmarkSaving.then(async () => {
+      const file = bookmarksFile()
+      await fsp.mkdir(path.dirname(file), { recursive: true })
+      const temp = `${file}.${process.pid}.tmp`
+      await fsp.writeFile(temp, `${JSON.stringify(state, null, 2)}\n`, 'utf8')
+      await fsp.rename(temp, file)
+    })
+    return bookmarkSaving
+  }
+
+  /**
+   * 书签密码在凭据服务里的键。
+   * @param {string} id 书签 id。
+   * @returns {string} 键。
+   */
+  function bookmarkCredentialKey(id) {
+    return `office-magic-box/bookmark/${id}`
+  }
+
+  /**
+   * 取凭据服务（可选能力）。
+   * @returns {object | undefined} 服务。
+   */
+  function credentialStore() {
+    try {
+      const service = ctx.get('credentials')
+      return service && typeof service.readRecord === 'function' ? service : undefined
+    } catch {
+      return undefined
+    }
+  }
+
+  /**
+   * 读书签密码。
+   * @param {string} id 书签 id。
+   * @returns {Promise<string>} 密码，没有则空串。
+   */
+  async function readBookmarkPassword(id) {
+    const store = credentialStore()
+    if (!store) return ''
+    try {
+      const record = await store.readRecord(bookmarkCredentialKey(id))
+      return record && record.kind === 'api-key' && typeof record.key === 'string' ? record.key : ''
+    } catch {
+      return ''
+    }
+  }
+
+  /**
+   * 写书签密码（走凭据服务，不落普通配置文件）。
+   * @param {string} id 书签 id。
+   * @param {string} password 密码。
+   * @returns {Promise<void>} 写完 resolve。
+   */
+  async function writeBookmarkPassword(id, password) {
+    const store = credentialStore()
+    if (!store) throw new Error('当前环境没有凭据服务，密码不会被保存')
+    await store.modifyRecord(bookmarkCredentialKey(id), async () => ({ kind: 'api-key', key: password }))
+  }
+
+  /**
+   * 删除书签密码。
+   * @param {string} id 书签 id。
+   * @returns {Promise<void>} 删完 resolve。
+   */
+  async function clearBookmarkPassword(id) {
+    const store = credentialStore()
+    if (!store) return
+    try {
+      await store.deleteRecord(bookmarkCredentialKey(id))
+    } catch {
+      // 记录不存在时忽略。
+    }
+  }
+
+  /**
+   * 书签页需要的快照（含浏览器可用性与「是否已存密码」）。
+   * @returns {Promise<object>} 快照。
+   */
+  async function bookmarkSnapshot() {
+    const state = await loadBookmarks()
+    const items = []
+    for (const item of state.items) {
+      items.push(Object.assign({}, item, { hasPassword: Boolean(await readBookmarkPassword(item.id)) }))
+    }
+    return {
+      ok: true,
+      items,
+      browsers: browserCatalog(),
+      credentials: Boolean(credentialStore()),
+      file: bookmarksFile(),
+    }
+  }
+
+  /**
+   * 保存（新增或修改）一条书签。
+   * @param {object} input 表单。
+   * @returns {Promise<{ savedId: string }>} 结果。
+   */
+  async function saveBookmark(input) {
+    const state = await loadBookmarks()
+    const name = text(input?.name).trim()
+    const url = text(input?.url).trim()
+    if (!name) throw new Error('请填写名称')
+    if (!/^https?:\/\//i.test(url)) throw new Error('网址必须以 http:// 或 https:// 开头')
+    const browser = BROWSER_IDS.includes(text(input?.browser)) ? text(input.browser) : 'system'
+    const customPath = text(input?.customPath).trim()
+    if (browser === 'custom' && !customPath) throw new Error('选了自定义浏览器，请填写程序路径')
+
+    const id = text(input?.id).trim()
+    let item
+    if (id) {
+      item = state.items.find(entry => entry.id === id)
+      if (!item) throw new Error('找不到这个书签，可能已被删除')
+    } else {
+      item = { id: randomUUID(), createdAt: Date.now() }
+      state.items.push(item)
+    }
+    Object.assign(item, { name, url, username: text(input?.username).trim(), browser, customPath })
+
+    const password = text(input?.password)
+    if (password) await writeBookmarkPassword(item.id, password)
+    if (input?.clearPassword === true) await clearBookmarkPassword(item.id)
+
+    await saveBookmarks(state)
+    return { savedId: item.id }
+  }
+
+  /**
+   * 删除一条书签（连带密码记录）。
+   * @param {object} input 请求。
+   * @returns {Promise<{ removed: boolean }>} 结果。
+   */
+  async function deleteBookmark(input) {
+    const state = await loadBookmarks()
+    const id = text(input?.id).trim()
+    const index = state.items.findIndex(entry => entry.id === id)
+    if (index < 0) return { removed: false }
+    state.items.splice(index, 1)
+    await clearBookmarkPassword(id)
+    await saveBookmarks(state)
+    return { removed: true }
+  }
+
+  /**
+   * 用书签指定的浏览器打开它。dryRun 只返回启动计划、不真的拉起进程（测试与预览用）。
+   * @param {object} input 请求。
+   * @returns {Promise<object>} 结果。
+   */
+  async function openBookmark(input) {
+    const state = await loadBookmarks()
+    const item = state.items.find(entry => entry.id === text(input?.id).trim())
+    if (!item) throw new Error('找不到这个书签，可能已被删除')
+    const plan = resolveLaunchPlan({
+      browserId: item.browser,
+      url: item.url,
+      customPath: item.customPath,
+    })
+    if (input?.dryRun === true) return { plan }
+    const child = spawn(plan.command, plan.args, { detached: true, stdio: 'ignore', windowsHide: true })
+    child.unref()
+    return { plan, pid: child.pid ?? null }
+  }
+
+  /**
+   * 取书签密码（供界面复制，不参与列表展示）。
+   * @param {object} input 请求。
+   * @returns {Promise<{ password: string, username: string }>} 凭据。
+   */
+  async function bookmarkSecret(input) {
+    const state = await loadBookmarks()
+    const item = state.items.find(entry => entry.id === text(input?.id).trim())
+    if (!item) throw new Error('找不到这个书签，可能已被删除')
+    const password = await readBookmarkPassword(item.id)
+    if (!password) throw new Error('这个书签没有保存密码')
+    return { password, username: item.username }
+  }
+
+  /**
+   * 处理书签动作。
+   * @param {object} body 请求体。
+   * @returns {Promise<object>} 结果。
+   */
+  async function bookmarkAction(body) {
+    const action = text(body?.action).trim()
+    if (action === 'save') {
+      const result = await saveBookmark(body)
+      return Object.assign({}, result, { state: await bookmarkSnapshot() })
+    }
+    if (action === 'delete') {
+      const result = await deleteBookmark(body)
+      return Object.assign({}, result, { state: await bookmarkSnapshot() })
+    }
+    if (action === 'open') return openBookmark(body)
+    if (action === 'secret') return bookmarkSecret(body)
+    throw new Error(`未知动作：${action || '(空)'}`)
+  }
+
+  /**
    * 生成一个 JSON 响应。
    * @param {number} status 状态码。
    * @param {unknown} payload 负载。
@@ -1149,6 +1420,32 @@ export function apply(ctx) {
                   'x-omb-stats': JSON.stringify(stats),
                 },
               })
+            } catch (error) {
+              return jsonResponse(400, { ok: false, error: messageOf(error) })
+            }
+          },
+        }))
+        keep(connection.fetch.register({
+          path: `${API_BASE}/bookmarks`,
+          methods: ['GET', 'POST'],
+          requestBody: 'buffered',
+          fetch: async request => {
+            if (request.method === 'GET') {
+              try {
+                return jsonResponse(200, await bookmarkSnapshot())
+              } catch (error) {
+                return jsonResponse(500, { ok: false, error: messageOf(error) })
+              }
+            }
+            let body = {}
+            try {
+              const raw = await request.text()
+              body = raw ? JSON.parse(raw) : {}
+            } catch {
+              return jsonResponse(400, { ok: false, error: '请求内容不是合法 JSON' })
+            }
+            try {
+              return jsonResponse(200, Object.assign({ ok: true }, await bookmarkAction(body)))
             } catch (error) {
               return jsonResponse(400, { ok: false, error: messageOf(error) })
             }

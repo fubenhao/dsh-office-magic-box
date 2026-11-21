@@ -37,6 +37,7 @@ const steps = [
   ['node', ['dev/validate-index.mjs'], '校验索引（三种基址 + 与 package.json 是否漂移）'],
   ['node', ['dev/host-test.mjs'], 'Host 测试'],
   ['node', ['dev/invoices-test.mjs'], '合并测试'],
+  ['node', ['dev/browsers-test.mjs'], '浏览器计划测试'],
   ['node', ['dev/render-smoke.mjs'], '渲染结构测试'],
 ]
 

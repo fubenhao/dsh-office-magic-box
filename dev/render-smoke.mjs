@@ -10,7 +10,7 @@ const source = fs.readFileSync(new URL('../client.js', import.meta.url), 'utf8')
 const bodyStart = source.indexOf('factory(require) {') + 'factory(require) {'.length
 const returnAt = source.lastIndexOf("    return {\n      inject: ['slots', 'locale'],")
 if (bodyStart < 0 || returnAt < 0) throw new Error('factory body markers not found')
-const body = `${source.slice(bodyStart, returnAt)}\nreturn { Btn, Field, Crumb, HomeView, InvoicesView, LauncherView, SettingsView, ServiceRow, SceneCard, App }\n`
+const body = `${source.slice(bodyStart, returnAt)}\nreturn { Btn, Field, Crumb, BookmarkRow, BookmarksView, HomeView, InvoicesView, LauncherView, SettingsView, ServiceRow, SceneCard, App }\n`
 
 const stubReact = {
   createElement(type, props, ...children) {
@@ -110,9 +110,9 @@ console.log('office-magic-box render smoke')
 const app = views.App({ t, pickDirectory: async () => ({ ok: true, path: null }) })
 check('外壳是 omb-page + omb-shell', app.props.className === 'omb-page' && byClass(app, 'omb-shell').length === 1)
 check('默认停在主页', byClass(app, 'omb-title')[0].children[0] === 'title', byClass(app, 'omb-title')[0].children)
-check('主页有两张功能卡', byClass(app, 'omb-fcard').length === 2, byClass(app, 'omb-fcard').length)
+check('主页有三张功能卡', byClass(app, 'omb-fcard').length === 3, byClass(app, 'omb-fcard').length)
 check('功能卡是按钮元素', byClass(app, 'omb-fcard').every(card => card.type === 'button'))
-check('卡片带图标与箭头', byClass(app, 'omb-fcard-icon').length === 2 && byClass(app, 'omb-fcard-arrow').length === 2)
+check('卡片带图标与箭头', byClass(app, 'omb-fcard-icon').length === 3 && byClass(app, 'omb-fcard-arrow').length === 3, [byClass(app, 'omb-fcard-icon').length, byClass(app, 'omb-fcard-arrow').length])
 check('主页有页脚', byClass(app, 'omb-foot').length === 1)
 
 const homeVersioned = views.HomeView({ t, version: '1.2.0', onOpen: noop })
@@ -219,5 +219,20 @@ const invoicesConfigured = views.InvoicesView({ t, onBack: noop, config })
 const configuredButtons = byClass(invoicesConfigured, 'omb-btn').map(button => button.children[0])
 check('配置后可「从文件夹添加」', configuredButtons.includes('folderAdd'), configuredButtons)
 check('有保存到文件夹与下载', configuredButtons.includes('saveToFolder') && configuredButtons.includes('download'), configuredButtons)
+
+/* —— 书签夹 —— */
+const bookmark = { id: 'b1', name: 'OA', url: 'https://oa.example.com', username: 'zhangsan', browser: 'chrome', customPath: '', hasPassword: true }
+const rowProps2 = { t, item: bookmark, busy: false, onOpen: noop, onCopy: noop, onEdit: noop, onDelete: noop }
+const bmRow = views.BookmarkRow(rowProps2)
+check('书签行是卡片', bmRow.props.className === 'omb-card')
+check('书签行展示浏览器与网址', byClass(bmRow, 'omb-count').length === 1 && byClass(bmRow, 'omb-mono').length === 1)
+check('有密码时出现复制按钮', byClass(bmRow, 'omb-btn').map(button => button.children[0]).includes('copyPassword'), byClass(bmRow, 'omb-btn').map(button => button.children[0]))
+check('打开按钮是实心', byClass(bmRow, 'omb-btn--solid').length === 1)
+const bmRowNoPass = views.BookmarkRow(Object.assign({}, rowProps2, { item: Object.assign({}, bookmark, { hasPassword: false }) }))
+check('无密码时没有复制按钮', !byClass(bmRowNoPass, 'omb-btn').map(button => button.children[0]).includes('copyPassword'))
+
+const bmView = views.BookmarksView({ t, onBack: noop })
+check('书签页有标题与新增入口', byClass(bmView, 'omb-title')[0].children[0] === 'bookmarksTitle' && byClass(bmView, 'omb-btn').some(button => button.children[0] === 'addBookmark'))
+check('书签页有面包屑', byClass(bmView, 'omb-crumb').length === 1)
 
 console.log(`\n${passed} 项通过`)

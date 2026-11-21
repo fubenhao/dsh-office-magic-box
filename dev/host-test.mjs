@@ -93,6 +93,27 @@ const officeKit = {
   },
 }
 
+const credentialRecords = new Map()
+const credentials = {
+  async readRecord(key) {
+    return credentialRecords.get(key)
+  },
+  async modifyRecord(key, mutate) {
+    const next = await mutate(credentialRecords.get(key))
+    if (next !== undefined) credentialRecords.set(key, next)
+    return next
+  },
+  async describeRecord(key) {
+    return { configured: credentialRecords.has(key), writable: true }
+  },
+  async listRecords() {
+    return [...credentialRecords.keys()].map(key => ({ key, kind: 'api-key' }))
+  },
+  async deleteRecord(key) {
+    credentialRecords.delete(key)
+  },
+}
+
 const routes = new Map()
 const effects = []
 const ctx = {
@@ -110,6 +131,7 @@ const ctx = {
     }
     if (name === 'subprocess') return subprocess
     if (name === 'officeKit') return officeKit
+    if (name === 'credentials') return credentials
     return undefined
   },
   effect(callback) {
@@ -131,6 +153,7 @@ const preview = routes.get('/api/office-magic-box/preview')
 const settingsRoute = routes.get('/api/office-magic-box/settings')
 const folderRoute = routes.get('/api/office-magic-box/invoices/folder')
 const saveRoute = routes.get('/api/office-magic-box/invoices/save')
+const bookmarksRoute = routes.get('/api/office-magic-box/bookmarks')
 assert.ok(state, '应注册 GET /api/office-magic-box/state')
 assert.ok(act, '应注册 POST /api/office-magic-box/act')
 assert.ok(invoices, '应注册 POST /api/office-magic-box/invoices')
@@ -138,6 +161,7 @@ assert.ok(preview, '应注册 /api/office-magic-box/preview')
 assert.ok(settingsRoute, '应注册 /api/office-magic-box/settings')
 assert.ok(folderRoute, '应注册 /api/office-magic-box/invoices/folder')
 assert.ok(saveRoute, '应注册 /api/office-magic-box/invoices/save')
+assert.ok(bookmarksRoute, '应注册 /api/office-magic-box/bookmarks')
 
 /**
  * 调一次 GET state。
@@ -379,6 +403,60 @@ const badToken = await preview.fetch(new Request('http://dsh.internal/api/office
 check('未知 token 返回 404', badToken.status === 404)
 const badPage = await preview.fetch(new Request(`http://dsh.internal/api/office-magic-box/preview?token=${previewBody.token}&page=9&dpi=110`))
 check('越界页码返回 400', badPage.status === 400)
+
+const bmList = await bookmarksRoute.fetch(new Request('http://dsh.internal/api/office-magic-box/bookmarks'))
+const bmListBody = await bmList.json()
+check('书签初始为空', bmList.status === 200 && bmListBody.items.length === 0, bmListBody)
+check('书签接口带浏览器目录', bmListBody.browsers.some(item => item.id === 'system') && bmListBody.browsers.length === 6, bmListBody.browsers.map(item => item.id))
+check('凭据服务可用', bmListBody.credentials === true)
+
+const bmSave = await bookmarksRoute.fetch(new Request('http://dsh.internal/api/office-magic-box/bookmarks', {
+  method: 'POST',
+  body: JSON.stringify({ action: 'save', name: 'OA', url: 'https://oa.example.com', username: 'zhangsan', password: 's3cret!', browser: 'system' }),
+}))
+const bmSaved = await bmSave.json()
+check('保存书签成功', bmSave.status === 200 && bmSaved.state.items.length === 1, bmSaved.error)
+check('密码标记为已保存', bmSaved.state.items[0].hasPassword === true)
+check('返回内容不含明文密码', !JSON.stringify(bmSaved).includes('s3cret!'))
+const bmId = bmSaved.state.items[0].id
+
+const bmSecret = await bookmarksRoute.fetch(new Request('http://dsh.internal/api/office-magic-box/bookmarks', {
+  method: 'POST',
+  body: JSON.stringify({ action: 'secret', id: bmId }),
+}))
+const bmSecretBody = await bmSecret.json()
+check('能取回密码（供复制）', bmSecret.status === 200 && bmSecretBody.password === 's3cret!', bmSecretBody)
+
+const bmOpen = await bookmarksRoute.fetch(new Request('http://dsh.internal/api/office-magic-box/bookmarks', {
+  method: 'POST',
+  body: JSON.stringify({ action: 'open', id: bmId, dryRun: true }),
+}))
+const bmOpenBody = await bmOpen.json()
+check('dryRun 给出启动计划', bmOpen.status === 200 && bmOpenBody.plan.label === 'system' && bmOpenBody.plan.args.length > 0, bmOpenBody.plan)
+
+const bmBadUrl = await bookmarksRoute.fetch(new Request('http://dsh.internal/api/office-magic-box/bookmarks', {
+  method: 'POST',
+  body: JSON.stringify({ action: 'save', name: 'bad', url: 'ftp://x' }),
+}))
+check('非 http(s) 网址被拒', bmBadUrl.status === 400 && /http/.test((await bmBadUrl.json()).error))
+
+const bmCustom = await bookmarksRoute.fetch(new Request('http://dsh.internal/api/office-magic-box/bookmarks', {
+  method: 'POST',
+  body: JSON.stringify({ action: 'save', name: 'bad2', url: 'https://x.test', browser: 'custom' }),
+}))
+check('自定义浏览器缺路径被拒', bmCustom.status === 400 && /程序路径/.test((await bmCustom.json()).error))
+
+const bookmarksFile = path.join(sandbox, 'office-magic-box', 'bookmarks.json')
+check('书签落盘', fs.existsSync(bookmarksFile))
+check('落盘文件里没有密码', !fs.readFileSync(bookmarksFile, 'utf8').includes('s3cret!'))
+
+const bmDelete = await bookmarksRoute.fetch(new Request('http://dsh.internal/api/office-magic-box/bookmarks', {
+  method: 'POST',
+  body: JSON.stringify({ action: 'delete', id: bmId }),
+}))
+const bmDeleted = await bmDelete.json()
+check('删除书签', bmDelete.status === 200 && bmDeleted.removed === true && bmDeleted.state.items.length === 0)
+check('删除后凭据记录一并清掉', credentialRecords.size === 0, credentialRecords.size)
 
 const settingsGet = await settingsRoute.fetch(new Request('http://dsh.internal/api/office-magic-box/settings'))
 const settingsBody = await settingsGet.json()

@@ -2,24 +2,27 @@
   <rect x="16" y="14" width="608" height="272" rx="18" fill="#f6f7f9" stroke="#d9dee6" stroke-width="2"/>
 
   <g>
-    <rect x="40" y="46" width="292" height="98" rx="12" fill="#ffffff" stroke="#e5e7eb" stroke-width="2"/>
-    <rect x="58" y="64" width="30" height="30" rx="8" fill="#fafafa" stroke="#e5e7eb" stroke-width="1.5"/>
-    <path d="M66 79h14M66 79v-6M66 79v6" fill="none" stroke="#8a94a6" stroke-width="1.6" stroke-linecap="round"/>
-    <rect x="100" y="66" width="104" height="9" rx="4.5" fill="#c9d2df"/>
-    <rect x="100" y="82" width="196" height="7" rx="3.5" fill="#e2e8f1"/>
-    <rect x="100" y="94" width="150" height="7" rx="3.5" fill="#eef1f6"/>
-    <path d="M310 79h10" fill="none" stroke="#b6c0d0" stroke-width="1.8" stroke-linecap="round"/>
-    <path d="M316 75l4 4-4 4" fill="none" stroke="#b6c0d0" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-
-    <rect x="40" y="156" width="292" height="98" rx="12" fill="#ffffff" stroke="#e5e7eb" stroke-width="2"/>
-    <rect x="58" y="174" width="30" height="30" rx="8" fill="#fafafa" stroke="#e5e7eb" stroke-width="1.5"/>
-    <path d="M65 180h10l5 5v14H65z" fill="none" stroke="#8a94a6" stroke-width="1.6" stroke-linejoin="round"/>
-    <path d="M75 180v5h5" fill="none" stroke="#8a94a6" stroke-width="1.6" stroke-linejoin="round"/>
-    <rect x="100" y="176" width="86" height="9" rx="4.5" fill="#c9d2df"/>
-    <rect x="100" y="192" width="196" height="7" rx="3.5" fill="#e2e8f1"/>
-    <rect x="100" y="204" width="128" height="7" rx="3.5" fill="#eef1f6"/>
-    <path d="M310 189h10" fill="none" stroke="#b6c0d0" stroke-width="1.8" stroke-linecap="round"/>
-    <path d="M316 185l4 4-4 4" fill="none" stroke="#b6c0d0" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="40" y="40" width="292" height="72" rx="12" fill="#ffffff" stroke="#e5e7eb" stroke-width="2"/>
+    <rect x="56" y="56" width="26" height="26" rx="8" fill="#fafafa" stroke="#e5e7eb" stroke-width="1.5"/>
+    <path d="M64 49h10M64 49v10" fill="none" stroke="#8a94a6" stroke-width="1.6" stroke-linecap="round"/>
+    <rect x="94" y="58" width="104" height="8" rx="4" fill="#c9d2df"/>
+    <rect x="94" y="74" width="174" height="6" rx="3" fill="#e2e8f1"/>
+    <path d="M310 73h10" fill="none" stroke="#b6c0d0" stroke-width="1.8" stroke-linecap="round"/>
+    <path d="M316 69l4 4-4 4" fill="none" stroke="#b6c0d0" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="40" y="122" width="292" height="72" rx="12" fill="#ffffff" stroke="#e5e7eb" stroke-width="2"/>
+    <rect x="56" y="138" width="26" height="26" rx="8" fill="#fafafa" stroke="#e5e7eb" stroke-width="1.5"/>
+    <path d="M63 47h8l4 4v10h-12z" fill="none" stroke="#8a94a6" stroke-width="1.6" stroke-linejoin="round"/>
+    <rect x="94" y="140" width="86" height="8" rx="4" fill="#c9d2df"/>
+    <rect x="94" y="156" width="156" height="6" rx="3" fill="#e2e8f1"/>
+    <path d="M310 155h10" fill="none" stroke="#b6c0d0" stroke-width="1.8" stroke-linecap="round"/>
+    <path d="M316 151l4 4-4 4" fill="none" stroke="#b6c0d0" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="40" y="204" width="292" height="72" rx="12" fill="#ffffff" stroke="#e5e7eb" stroke-width="2"/>
+    <rect x="56" y="220" width="26" height="26" rx="8" fill="#fafafa" stroke="#e5e7eb" stroke-width="1.5"/>
+    <path d="M64 46h12v16l-6-4-6 4z" fill="none" stroke="#8a94a6" stroke-width="1.6" stroke-linejoin="round"/>
+    <rect x="94" y="222" width="92" height="8" rx="4" fill="#c9d2df"/>
+    <rect x="94" y="238" width="162" height="6" rx="3" fill="#e2e8f1"/>
+    <path d="M310 237h10" fill="none" stroke="#b6c0d0" stroke-width="1.8" stroke-linecap="round"/>
+    <path d="M316 233l4 4-4 4" fill="none" stroke="#b6c0d0" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
   </g>
 
   <g>

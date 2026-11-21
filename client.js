@@ -172,6 +172,35 @@ window.__ModuleLoader__.load({
       savedTo: '已保存到',
       pathFile: '文件夹内',
       download: '下载',
+      featureBookmarks: '书签夹',
+      featureBookmarksDesc: '把常用办公系统的地址、账号和指定浏览器存一处，点一下就用那个浏览器打开。',
+      featureBookmarksMeta: '常用系统 · 一键打开',
+      bookmarksTitle: '书签夹',
+      bookmarksSubtitle: '存好地址、账号和想用的浏览器，之后点「打开」直接进系统；密码存在宿主凭据库，不写进普通配置。',
+      addBookmark: '新增书签',
+      emptyBookmarks: '还没有书签。填上系统地址、账号和想用的浏览器，之后点「打开」即可。',
+      bookmarkName: '名称',
+      bookmarkUrl: '网址',
+      bookmarkUrlHint: 'http:// 或 https:// 开头',
+      bookmarkUsername: '用户名',
+      bookmarkPassword: '密码',
+      bookmarkPasswordKeep: '已保存密码；留空表示不修改',
+      bookmarkPasswordEmpty: '还没保存密码',
+      passwordSavedShort: '密码已存',
+      bookmarkBrowser: '打开方式',
+      bookmarkCustomPath: '浏览器程序路径',
+      browserSystem: '系统默认浏览器',
+      browserChrome: 'Chrome',
+      browserEdge: 'Edge',
+      browserFirefox: 'Firefox',
+      browserBrave: 'Brave',
+      browserCustom: '自定义程序',
+      browserNotInstalled: '（未安装）',
+      copyPassword: '复制密码',
+      clearPassword: '清除已保存的密码',
+      credentialsUnavailable: '当前环境没有凭据服务：其它信息照常保存，密码不会被存。',
+      openedWith: '已用 {browser} 打开',
+      credentialCopied: '已复制到剪贴板',
       aboutTitle: '关于',
       aboutName: '名称',
       aboutVersion: '版本',
@@ -337,6 +366,35 @@ window.__ModuleLoader__.load({
       savedTo: 'Saved to',
       pathFile: 'on disk',
       download: 'Download',
+      featureBookmarks: 'Bookmarks',
+      featureBookmarksDesc: 'Keep office system addresses, accounts and the browser each one should open in, then open any of them with one click.',
+      featureBookmarksMeta: 'Office systems · one click',
+      bookmarksTitle: 'Bookmarks',
+      bookmarksSubtitle: 'Save the address, account and preferred browser; passwords live in the host credential store, not in a plain config file.',
+      addBookmark: 'Add bookmark',
+      emptyBookmarks: 'No bookmarks yet. Fill in an address, account and browser, then press Open.',
+      bookmarkName: 'Name',
+      bookmarkUrl: 'URL',
+      bookmarkUrlHint: 'Starts with http:// or https://',
+      bookmarkUsername: 'User name',
+      bookmarkPassword: 'Password',
+      bookmarkPasswordKeep: 'A password is saved; leave empty to keep it',
+      bookmarkPasswordEmpty: 'No password saved',
+      passwordSavedShort: 'password saved',
+      bookmarkBrowser: 'Open with',
+      bookmarkCustomPath: 'Browser executable',
+      browserSystem: 'System default browser',
+      browserChrome: 'Chrome',
+      browserEdge: 'Edge',
+      browserFirefox: 'Firefox',
+      browserBrave: 'Brave',
+      browserCustom: 'Custom program',
+      browserNotInstalled: ' (not installed)',
+      copyPassword: 'Copy password',
+      clearPassword: 'Clear the saved password',
+      credentialsUnavailable: 'This environment has no credential service: the rest is saved, but passwords are not stored.',
+      openedWith: 'Opened with {browser}',
+      credentialCopied: 'Copied to the clipboard',
       aboutTitle: 'About',
       aboutName: 'Name',
       aboutVersion: 'Version',
@@ -673,6 +731,10 @@ window.__ModuleLoader__.load({
 .omb-kv { display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 7px 14px; align-items: baseline; margin: 0; font-size: 12.5px; }
 .omb-kv dt { color: #a1a1aa; }
 .omb-kv dd { margin: 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #3f3f46; }
+.omb-bm-user { flex: 0 0 auto; max-width: 40%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #71717a; font-size: 11.5px; }
+.omb-bm-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.omb-bm-form > .omb-field--full { grid-column: 1 / -1; }
+@media (max-width: 720px) { .omb-bm-form { grid-template-columns: minmax(0, 1fr); } }
 `
 
     /**
@@ -904,6 +966,19 @@ window.__ModuleLoader__.load({
             description: t('featureInvoicesDesc'),
             meta: t('featureInvoicesMeta'),
             onOpen: () => props.onOpen('invoices'),
+          }),
+          h(FeatureCard, {
+            key: 'bookmarks',
+            icon: h('svg', {
+              viewBox: '0 0 24 24', width: 20, height: 20, fill: 'none', stroke: 'currentColor',
+              strokeWidth: 1.7, strokeLinecap: 'round', strokeLinejoin: 'round', 'aria-hidden': true,
+            },
+            h('path', { d: 'M6.5 3.5h11v17l-5.5-4-5.5 4z' }),
+            ),
+            title: t('featureBookmarks'),
+            description: t('featureBookmarksDesc'),
+            meta: t('featureBookmarksMeta'),
+            onOpen: () => props.onOpen('bookmarks'),
           }),
         ),
         h('footer', { className: 'omb-foot' },
@@ -2396,6 +2471,353 @@ window.__ModuleLoader__.load({
         ),
       )
     }
+    /* ————————————————— 书签夹 ————————————————— */
+
+    /**
+     * 浏览器 id 的显示名。
+     * @param {Function} t 翻译。
+     * @param {string} id 浏览器 id。
+     * @returns {string} 文案。
+     */
+    function browserLabel(t, id) {
+      const key = `browser${String(id || 'system').charAt(0).toUpperCase()}${String(id || 'system').slice(1)}`
+      return t(key)
+    }
+
+    /**
+     * 书签表单。
+     * @param {object} props 属性。
+     * @returns {object} React 元素。
+     */
+    function BookmarkForm(props) {
+      const { t, draft, browsers, errors = {}, busy } = props
+      const set = (key, value) => {
+        props.onClearError(key)
+        props.onChange(Object.assign({}, draft, { [key]: value }))
+      }
+      return h('div', { className: 'omb-form' },
+        h('div', { className: 'omb-bm-form' },
+          h(Field, { label: t('bookmarkName'), error: errors.name },
+            h('input', {
+              className: 'omb-input',
+              value: draft.name || '',
+              placeholder: t('addBookmark'),
+              onChange: event => set('name', event.target.value),
+            }),
+          ),
+          h(Field, { label: t('bookmarkBrowser') },
+            h('select', {
+              className: 'omb-input',
+              value: draft.browser || 'system',
+              onChange: event => set('browser', event.target.value),
+            },
+            browsers.map(browser => h('option', {
+              key: browser.id,
+              value: browser.id,
+              disabled: browser.available === false && browser.id !== 'custom',
+            }, `${browserLabel(t, browser.id)}${browser.available === false && browser.id !== 'custom' ? t('browserNotInstalled') : ''}`)),
+            ),
+          ),
+          h('div', { className: 'omb-field omb-field--full' },
+            h(Field, { label: t('bookmarkUrl'), hint: t('bookmarkUrlHint'), error: errors.url },
+              h('input', {
+                className: 'omb-input',
+                value: draft.url || '',
+                spellCheck: false,
+                placeholder: 'https://oa.example.com',
+                onChange: event => set('url', event.target.value),
+              }),
+            ),
+          ),
+          h(Field, { label: t('bookmarkUsername') },
+            h('input', {
+              className: 'omb-input',
+              value: draft.username || '',
+              spellCheck: false,
+              onChange: event => set('username', event.target.value),
+            }),
+          ),
+          h(Field, { label: t('bookmarkPassword'), hint: draft.id && draft.hasPassword ? t('bookmarkPasswordKeep') : undefined },
+            h('input', {
+              className: 'omb-input',
+              type: 'password',
+              autoComplete: 'new-password',
+              value: draft.password || '',
+              placeholder: draft.id && draft.hasPassword ? '••••••' : '',
+              onChange: event => set('password', event.target.value),
+            }),
+          ),
+          draft.browser === 'custom'
+            ? h('div', { className: 'omb-field omb-field--full' },
+              h(Field, { label: t('bookmarkCustomPath'), error: errors.customPath },
+                h('input', {
+                  className: 'omb-input',
+                  value: draft.customPath || '',
+                  spellCheck: false,
+                  placeholder: 'C:\\Program Files\\Custom\\browser.exe',
+                  onChange: event => set('customPath', event.target.value),
+                }),
+              ),
+            )
+            : null,
+          draft.id && draft.hasPassword
+            ? h('label', { className: 'omb-check' },
+              h('input', {
+                type: 'checkbox',
+                checked: draft.clearPassword === true,
+                onChange: event => set('clearPassword', event.target.checked),
+              }),
+              t('clearPassword'),
+            )
+            : null,
+        ),
+        h('div', { className: 'omb-form-actions' },
+          h(Btn, { label: t('cancel'), onClick: props.onCancel }),
+          h(Btn, { label: t('save'), variant: 'solid', disabled: busy, onClick: props.onSave }),
+        ),
+      )
+    }
+
+    /**
+     * 一条书签。
+     * @param {object} props 属性。
+     * @returns {object} React 元素。
+     */
+    function BookmarkRow(props) {
+      const { t, item, busy } = props
+      return h('article', { className: 'omb-card' },
+        h('div', { className: 'omb-card-title' },
+          h('span', { className: 'omb-name', title: item.name }, item.name),
+          h('span', { className: 'omb-count' }, browserLabel(t, item.browser)),
+          h('div', { className: 'omb-card-actions' },
+            h(Btn, { size: 'sm', label: t('open'), variant: 'solid', disabled: busy, onClick: () => props.onOpen(item) }),
+            item.hasPassword
+              ? h(Btn, { size: 'sm', label: t('copyPassword'), disabled: busy, onClick: () => props.onCopy(item) })
+              : null,
+            h(Btn, { size: 'sm', label: t('edit'), disabled: busy, onClick: () => props.onEdit(item) }),
+            h(Btn, { size: 'sm', label: t('delete'), tone: 'danger', disabled: busy, onClick: () => props.onDelete(item) }),
+          ),
+        ),
+        h('div', { className: 'omb-meta' },
+          h('code', { className: 'omb-mono', title: item.url }, item.url),
+          item.username ? h('span', { className: 'omb-bm-user', title: item.username }, item.username) : null,
+          h('span', { className: 'omb-note' }, item.hasPassword ? t('passwordSavedShort') : t('bookmarkPasswordEmpty')),
+        ),
+      )
+    }
+
+    /**
+     * 书签夹。
+     * @param {object} props 属性。
+     * @returns {object} React 元素。
+     */
+    function BookmarksView(props) {
+      const t = props.t
+      const [state, setState] = useState(null)
+      const [draft, setDraft] = useState(null)
+      const [formErrors, setFormErrors] = useState({})
+      const [busy, setBusy] = useState(false)
+      const [error, setError] = useState('')
+      const [notice, setNotice] = useState('')
+      const [confirming, setConfirming] = useState(null)
+
+      const reload = useCallback(async () => {
+        try {
+          const payload = await call('/bookmarks')
+          setState(payload)
+          setError('')
+          return payload
+        } catch (cause) {
+          setError(reasonOf(cause))
+          return null
+        }
+      }, [])
+
+      useEffect(() => {
+        reload()
+      }, [reload])
+
+      useEffect(() => {
+        if (!notice) return
+        const timer = setTimeout(() => setNotice(''), NOTICE_MS)
+        return () => clearTimeout(timer)
+      }, [notice])
+
+      const act = async body => {
+        setBusy(true)
+        try {
+          const payload = await call('/bookmarks', { method: 'POST', body: JSON.stringify(body) }, 30000)
+          if (payload.state) setState(payload.state)
+          setError('')
+          return payload
+        } catch (cause) {
+          setError(reasonOf(cause))
+          return null
+        } finally {
+          setBusy(false)
+        }
+      }
+
+      const items = (state && state.items) || []
+      const browsers = (state && state.browsers) || [{ id: 'system', available: true }]
+      const credentials = state ? state.credentials !== false : true
+
+      const startAdd = () => {
+        setFormErrors({})
+        setDraft({ id: '', name: '', url: '', username: '', password: '', browser: 'system', customPath: '', clearPassword: false })
+      }
+
+      const startEdit = item => {
+        setFormErrors({})
+        setDraft({
+          id: item.id,
+          name: item.name,
+          url: item.url,
+          username: item.username,
+          password: '',
+          browser: item.browser,
+          customPath: item.customPath,
+          clearPassword: false,
+          hasPassword: item.hasPassword,
+        })
+      }
+
+      const save = async () => {
+        if (!draft) return
+        const errors = {}
+        if (!String(draft.name || '').trim()) errors.name = t('needName')
+        if (!/^https?:\/\//i.test(String(draft.url || '').trim())) errors.url = t('bookmarkUrlHint')
+        if (draft.browser === 'custom' && !String(draft.customPath || '').trim()) errors.customPath = t('bookmarkCustomPath')
+        setFormErrors(errors)
+        if (Object.keys(errors).length > 0) return
+        const payload = await act({
+          action: 'save',
+          id: draft.id || '',
+          name: draft.name,
+          url: draft.url,
+          username: draft.username,
+          password: draft.password,
+          browser: draft.browser,
+          customPath: draft.customPath,
+          clearPassword: draft.clearPassword === true,
+        })
+        if (payload) {
+          setDraft(null)
+          setNotice(t('saved'))
+        }
+      }
+
+      const open = async item => {
+        const payload = await act({ action: 'open', id: item.id })
+        if (payload && payload.plan) {
+          setNotice(fill(t('openedWith'), { browser: browserLabel(t, payload.plan.label) }))
+        }
+      }
+
+      const copyPassword = async item => {
+        const payload = await act({ action: 'secret', id: item.id })
+        if (!payload || typeof payload.password !== 'string') return
+        try {
+          await navigator.clipboard.writeText(payload.password)
+          setNotice(t('credentialCopied'))
+        } catch {
+          setError(`${t('copyPassword')}：${payload.password}`)
+        }
+      }
+
+      const remove = async () => {
+        if (!confirming) return
+        const target = confirming
+        setConfirming(null)
+        const payload = await act({ action: 'delete', id: target.id })
+        if (payload) setNotice(t('saved'))
+      }
+
+      const nodes = []
+      if (draft) {
+        nodes.push(h(BookmarkForm, {
+          key: 'form',
+          t,
+          draft,
+          browsers,
+          errors: formErrors,
+          busy,
+          onChange: setDraft,
+          onClearError: key => setFormErrors(previous => {
+            if (!previous[key]) return previous
+            const next = Object.assign({}, previous)
+            delete next[key]
+            return next
+          }),
+          onCancel: () => setDraft(null),
+          onSave: save,
+        }))
+      }
+      if (!items.length && !draft && state) {
+        nodes.push(h('div', { className: 'omb-empty', key: 'empty' },
+          h('p', null, t('emptyBookmarks')),
+          h(Btn, { label: t('addBookmark'), variant: 'solid', onClick: startAdd }),
+        ))
+      }
+      for (const item of items) {
+        nodes.push(h(BookmarkRow, {
+          key: item.id,
+          t,
+          item,
+          busy,
+          onOpen: open,
+          onCopy: copyPassword,
+          onEdit: startEdit,
+          onDelete: setConfirming,
+        }))
+      }
+
+      return h('div', null,
+        h(Crumb, { t, onBack: props.onBack, current: t('bookmarksTitle') }),
+        h('header', { className: 'omb-head' },
+          h('div', { className: 'omb-head-main' },
+            h('h1', { className: 'omb-title' }, t('bookmarksTitle')),
+            h('p', { className: 'omb-subtitle' }, t('bookmarksSubtitle')),
+          ),
+          h('div', { className: 'omb-head-actions' },
+            busy ? h('span', { className: 'omb-note' }, t('working')) : null,
+            h(Btn, { label: t('addBookmark'), variant: 'solid', onClick: startAdd }),
+          ),
+        ),
+        error || notice
+          ? h('div', { className: 'omb-bars' },
+            error
+              ? h('div', { className: 'omb-bar omb-bar--error', role: 'alert' },
+                h('span', { className: 'omb-bar-text' }, error),
+                h(Btn, { size: 'sm', label: t('dismiss'), onClick: () => setError('') }),
+              )
+              : null,
+            notice
+              ? h('div', { className: 'omb-bar omb-bar--notice', role: 'status', 'aria-live': 'polite' },
+                h('span', { className: 'omb-bar-text' }, notice),
+              )
+              : null,
+          )
+          : null,
+        confirming
+          ? h('div', { className: 'omb-bar omb-bar--ask', role: 'group' },
+            h('span', { className: 'omb-bar-text' }, `${t('delete')}「${confirming.name}」？`),
+            h(Btn, { size: 'sm', label: t('delete'), tone: 'danger', onClick: remove }),
+            h(Btn, { size: 'sm', label: t('cancel'), onClick: () => setConfirming(null) }),
+          )
+          : null,
+        h('div', { className: 'omb-narrow omb-stack' },
+          state
+            ? (nodes.length > 0 ? h('div', { className: 'omb-list' }, nodes) : h('p', { className: 'omb-muted' }, t('loading')))
+            : h('p', { className: 'omb-muted' }, t('loading')),
+        ),
+        h('footer', { className: 'omb-foot' },
+          state && state.file ? h('code', { className: 'omb-mono', title: state.file }, state.file) : null,
+          credentials ? null : h('span', null, t('credentialsUnavailable')),
+        ),
+      )
+    }
+
     /* ————————————————— 外壳 ————————————————— */
 
     /**
@@ -2432,7 +2854,9 @@ window.__ModuleLoader__.load({
             ? h(LauncherView, { t: props.t, pickDirectory: props.pickDirectory, onBack: goHome })
             : view === 'invoices'
               ? h(InvoicesView, { t: props.t, onBack: goHome, config })
-              : view === 'settings'
+              : view === 'bookmarks'
+                ? h(BookmarksView, { t: props.t, onBack: goHome })
+                : view === 'settings'
                 ? h(SettingsView, {
                   t: props.t,
                   onBack: goHome,
