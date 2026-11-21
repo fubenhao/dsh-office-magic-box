@@ -195,7 +195,32 @@ https://cdn.jsdelivr.net/npm/dsh-office-magic-box/market/index.json
 
 > 注意：他们的 CI 从 **GitHub 仓库**读 manifest，所以 npm 发布**不是**收录条件；但 npm 页面若要与该条目录关联，`package.json` 的 `repository` 必须指回同一仓库（我们已经指回）。
 
-## 十、发版检查单
+## 十、发版流程（长期方案：npm + jsDelivr）
+
+每次发版就两步，索引跟着包走，**不需要手工维护**：
+
+```bash
+# 1) 一条命令：重生成两份索引 → 校验 → 跑全部测试 → 打包
+node dev/release.mjs
+
+# 2) 发布（需要 npm 登录；每次发版只改版本号后重复这两步）
+npm login --registry=https://registry.npmjs.org          # 首次或令牌过期时
+npm publish ./dsh-office-magic-box-<版本>.tgz --access public --registry=https://registry.npmjs.org
+
+# 3) 发布后自检（registry 版本、jsDelivr 索引可解析、图标可访问）
+node dev/verify-published.mjs
+```
+
+`dev/release.mjs` 依次做：`make-market`（npm 源索引）→ `make-index-git`（git 兜底索引，钉当前 HEAD）→ `validate-index`（三种基址解析 + 与 `package.json` 是否漂移）→ 三个测试套件 → `npm pack`。
+
+发版要点：
+
+- 版本号只改 `package.json` 一处；索引里的 `version` 由脚本从 `package.json` 读，天然一致，`validate-index` 会拦住漂移。
+- 包内的 `market/index.json` 就是 jsDelivr 提供的那份，所以**索引永远与包同版本**，不必手改。
+- 发布后用 `node dev/verify-published.mjs` 自检；本机到 jsDelivr 若被网络挡住，脚本会区分「URL 有问题」与「本机连不上」。
+- 标签对齐：`git tag v<版本> && git push origin v<版本>`，方便对得上 npm 上的产物。
+
+## 十一、发版检查单
 
 - [x] 公开包名、去掉 `private`、作者/许可证/engines
 - [x] `npm pack` 产物不含 `dev/`、`node_modules/`、测试
