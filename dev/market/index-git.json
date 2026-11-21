@@ -51,11 +51,11 @@
       "versions": [
         {
           "version": "1.2.0",
-          "publishTimestamp": 1795234576,
+          "publishTimestamp": 1795235814,
           "source": {
             "type": "git",
             "url": "https://github.com/fubenhao/dsh-office-magic-box",
-            "commit": "bf057d94476c16a9b7bf8d4b09ac14d3c0f21346"
+            "commit": "1ebfee19759966b580b9b07ba5ae726be8b45c33"
           },
           "engines": {
             "dsh": ">=0.2.1-rc.2 || >=0.2.2-rc.1"
