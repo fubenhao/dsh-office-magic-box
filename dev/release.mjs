@@ -54,4 +54,7 @@ console.log(`\n✓ ${pkg.name} v${pkg.version} 已打包：${tarball}（${(size 
 console.log('\n接下来两步需要你的 npm 账号：\n')
 console.log('  npm login --registry=https://registry.npmjs.org')
 console.log(`  npm publish ./${tarball} --access public --registry=https://registry.npmjs.org\n`)
-console.log('发布后自检：node dev/verify-published.mjs')
+console.log('发布后自检：node dev/verify-published.mjs\n')
+console.log('市场索引地址（钉版本，可直接验证）：')
+console.log(`  https://unpkg.com/${pkg.name}@${pkg.version}/market/index.json`)
+console.log(`  https://cdn.jsdelivr.net/npm/${pkg.name}/market/index.json`)

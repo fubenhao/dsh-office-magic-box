@@ -149,10 +149,12 @@ node dev/market/serve.mjs 8899    # 改端口：node dev/market/serve.mjs 8901
 发布成功后**不用再做任何托管**，索引随包发布，任意 npm 文件 CDN 都能取到（内容同源，安装走 npm）：
 
 ```
-https://unpkg.com/dsh-office-magic-box/market/index.json                                   # 国内实测可达
-https://cdn.jsdelivr.net/npm/dsh-office-magic-box/market/index.json                        # 海外常用
-https://raw.githubusercontent.com/fubenhao/dsh-office-magic-box/main/market/index.json     # 仓库直读
+https://unpkg.com/dsh-office-magic-box@<版本>/market/index.json                            # 国内实测可达（必须钉版本）
+https://cdn.jsdelivr.net/npm/dsh-office-magic-box/market/index.json                       # 不跳转，海外常用
+https://raw.githubusercontent.com/fubenhao/dsh-office-magic-box/main/market/index.json    # 不跳转，仓库直读
 ```
+
+⚠️ **市场取索引不接受重定向**（实测报 `unexpected redirect`）：unpkg 的 `/market/index.json` 与 `@latest/market/index.json` 都会 302 到 `@<版本>/`，只有钉版本的地址直接 200。所以 unpkg 那条**每次发版要改版本号**——发版脚本会把该 URL 打印出来。jsDelivr 与 raw 不跳转，但部分大陆网络直连不可达。
 
 注意：个人网络可能挡住其中某一条（例如 jsDelivr 在部分大陆网络下 `ECONNRESET`），这时换另外一条即可——它们提供的是同一个文件，安装来源都是 npm。
 
